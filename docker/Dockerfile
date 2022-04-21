@@ -41,6 +41,8 @@ RUN wget -O /tmp/mysql-connector-java-${MYSQL_DRIVER_VERSION}.tar.gz            
 RUN grep -q jira:x:1000: /etc/group || addgroup --gid ${CONTAINER_GID} ${CONTAINER_GROUP}
 RUN grep -q jira:x:1000: /etc/passwd || adduser --uid ${CONTAINER_UID} --ingroup ${CONTAINER_GROUP} --home /home/${CONTAINER_USER} --shell /bin/bash ${CONTAINER_USER}
 
+RUN chown -R 1000.1000 /opt/jira
+
 RUN apt-get update && apt-get -y install patch && mkdir /usr/local/patch
 RUN mkdir -p /usr/local/patch/src
 COPY fernflower.jar /usr/local/patch/fernflower.jar
@@ -48,9 +50,13 @@ ENV EXTRAS=3.4.6
 COPY extras.patch /usr/local/patch
 RUN cp /opt/jira/atlassian-jira/WEB-INF/lib/atlassian-extras-${EXTRAS}.jar /usr/local/patch/src
 RUN cd /usr/local/patch && mkdir out && java -jar fernflower.jar -hdc=0 -dgs=1 -rsy=1 -lit=1 src/atlassian-extras-${EXTRAS}.jar out/
-RUN cd /usr/local/patch/out && unzip *jar && cp com/atlassian/extras/decoder/v2/Version2LicenseDecoder.java /opt/jira/atlassian-jira/WEB-INF/lib/
+RUN cd /usr/local/patch/out && \
+	unzip *jar && \
+	patch -p1 < /usr/local/patch/extras.patch && \
+	cp com/atlassian/extras/decoder/v2/Version2LicenseDecoder.java /opt/jira/atlassian-jira/WEB-INF/lib/
+
 RUN cd /opt/jira/atlassian-jira/WEB-INF/lib/ && \
-	javac -cp commons-codec-1.15.jar:atlassian-extras-${EXTRAS}.jar:atlassian-extras-common-${EXTRAS}.jar:atlassian-extras-key-manager-${EXTRAS}.jar \
+	javac --source 8 --target 8 -cp commons-codec-1.15.jar:atlassian-extras-${EXTRAS}.jar:atlassian-extras-common-${EXTRAS}.jar:atlassian-extras-key-manager-${EXTRAS}.jar \
 		Version2LicenseDecoder.java -d . && \
 	jar -uf atlassian-extras-${EXTRAS}.jar com/atlassian/extras/decoder/v2/Version2LicenseDecoder.class
 
@@ -58,6 +64,5 @@ USER jira
 WORKDIR ${JIRA_HOME}
 VOLUME ["/var/atlassian/jira"]
 EXPOSE 8080
-#ENTRYPOINT ["/sbin/tini","--","/usr/local/share/atlassian/docker-entrypoint.sh"]
-#CMD ["jira"]
-CMD ["/bin/bash"]
+CMD ["/opt/jira/bin/start-jira.sh", "-fg"]
+
