@@ -7,13 +7,10 @@ VOLUMES=-v $(shell pwd)/debug:/usr/local/debug -v /usr/local/jira:/var/atlassian
 .PHONY: help
 help:
 	@echo "Run 'make build' to create the patched Jira"
-	@echo "Run 'make start' to start it. When prompted for your licence,"
-	@echo "run 'make licence' to create it."
+	@echo "Run 'make start' to start it. If you are prompted for a licence,"
+	@echo "use your existing licence."
 	@echo ""
 	@echo "  ** Note that you MUST HAVE AN EXISTING LICENCE! **"
-	@echo "  This simply extends your 'valid until' time so you can download"
-	@echo "  and use Jira releases that have fixed security vulnerabilities"
-	@echo "  that you are unable to use currently"
 	@echo ""
 
 .PHONY: licence
@@ -26,19 +23,9 @@ licence: licence/licence.txt
 .PHONY: setup
 setup: /usr/local/jira docker/fernflower.jar
 
-.PHONY: build
-build: .docker_build
-
-.docker_build: setup $(wildcard docker/*)
-	docker build --tag jira:${JIRA_VERSION} --build-arg JIRA_VERSION=$(JIRA_VERSION) --build-arg JIRA_FILE=$(JIRA_FILE) --build-arg JIRA_URL=$(JIRA_URL) docker/
-	touch $@
-
-docker/fernflower.jar: /tmp/fernflower.jar
-	cp $< $@
-
-# Not used any more
-docker/master.tar.gz:
-	wget https://github.com/binhnt-teko/jira-crack/archive/refs/heads/master.tar.gz -O $@
+/usr/local/jira:
+	mkdir $@
+	chmod 777 $@
 
 .PHONY: start
 start: .docker_build
@@ -48,12 +35,41 @@ start: .docker_build
 stop:
 	docker rm -f jira || :
 
-debug: stop .docker_build
-	docker run -it --rm $(VOLUMES) --name jira-debug jira:${JIRA_VERSION} /bin/bash
+.PHONY: build
+build: .docker_build
+
+.docker_build: setup $(wildcard docker/*)
+	docker build --tag jira:${JIRA_VERSION} --build-arg JIRA_VERSION=$(JIRA_VERSION) --build-arg JIRA_FILE=$(JIRA_FILE) --build-arg JIRA_URL=$(JIRA_URL) docker/
+	touch $@
 
 .PHONY: shell
 shell: start
 	docker exec -it --user=0 jira /bin/bash
+
+docker/fernflower.jar: /tmp/fernflower.jar
+	cp $< $@
+
+jar: fernflower.jar
+fernflower.jar: /tmp/fernflower.jar
+
+/tmp/fernflower.jar: .fernflower_docker_build
+	docker run --rm -v /tmp:/tmp -it fernflower:latest cp /usr/local/fernflower/build/libs/fernflower.jar /tmp
+
+.fernflower_docker_build: $(wildcard fernflower/*)
+	docker build --tag fernflower fernflower/
+	touch $@
+
+.PHONY: ffshell
+ffshell: .fernflower_docker_build
+	docker run --rm -it fernflower:latest /bin/bash
+
+# Not used any more
+docker/master.tar.gz:
+	wget https://github.com/binhnt-teko/jira-crack/archive/refs/heads/master.tar.gz -O $@
+
+
+debug: stop .docker_build
+	docker run -it --rm $(VOLUMES) --name jira-debug jira:${JIRA_VERSION} /bin/bash
 
 licence/licence.txt: licence/patched_licence.txt
 	php processor.php -e $< -r $@
@@ -78,24 +94,4 @@ licence/current.txt:
 	@echo "You MUST have a Jira licence to permit reverse engineering"
 	@echo "under section 47D of the copyright act"
 	@exit 1
-
-/usr/local/jira:
-	mkdir $@
-	chmod 777 $@
-
-jar: fernflower.jar
-
-.fernflower_docker_build: $(wildcard fernflower/*)
-	docker build --tag fernflower fernflower/
-	touch $@
-
-.PHONY: ffshell
-ffshell: .fernflower_docker_build
-	docker run --rm -it fernflower:latest /bin/bash
-
-fernflower.jar: /tmp/fernflower.jar
-
-/tmp/fernflower.jar: .fernflower_docker_build
-	docker run --rm -v /tmp:/tmp -it fernflower:latest cp /usr/local/fernflower/build/libs/fernflower.jar /tmp
-
 
