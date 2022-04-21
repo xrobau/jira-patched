@@ -1,0 +1,5 @@
+.docker_build
+.fernflower_docker_build
+licence/
+docker/fernflower.jar
+debug/
