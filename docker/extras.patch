@@ -1,6 +1,6 @@
 diff -ur orig/com/atlassian/extras/decoder/v2/Version2LicenseDecoder.java patched/com/atlassian/extras/decoder/v2/Version2LicenseDecoder.java
---- orig/com/atlassian/extras/decoder/v2/Version2LicenseDecoder.java	2022-04-21 00:49:08.000000000 +0000
-+++ patched/com/atlassian/extras/decoder/v2/Version2LicenseDecoder.java	2022-04-21 00:49:02.000000000 +0000
+--- orig/com/atlassian/extras/decoder/v2/Version2LicenseDecoder.java	2022-04-21 02:33:30.000000000 +0000
++++ patched/com/atlassian/extras/decoder/v2/Version2LicenseDecoder.java	2022-04-21 22:32:53.982233272 +0000
 @@ -16,11 +16,11 @@
  import java.io.StringWriter;
  import java.nio.charset.StandardCharsets;
@@ -14,6 +14,15 @@ diff -ur orig/com/atlassian/extras/decoder/v2/Version2LicenseDecoder.java patche
  
  public class Version2LicenseDecoder extends AbstractLicenseDecoder {
     public static final int VERSION_NUMBER_1 = 1;
+@@ -68,7 +68,7 @@
+       byte[] zippedLicenseBytes = this.checkAndGetLicenseText(encodedLicenseTextAndHash);
+       Reader licenseText = this.unzipText(zippedLicenseBytes);
+       Properties properties = this.loadLicenseConfiguration(licenseText);
+-      if (this.verifyLicenseHash) {
++      if (false) {
+          this.verifyLicenseHash(properties);
+       }
+ 
 @@ -102,19 +102,14 @@
           if (keyVersion == null) {
              throw new LicenseVerificationException(LicenseVerificationException.VerificationFailureReason.MISSING_PROPERTY, "keyVersion", properties);

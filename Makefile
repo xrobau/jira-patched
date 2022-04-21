@@ -53,7 +53,7 @@ debug: stop .docker_build
 
 .PHONY: shell
 shell: start
-	docker exec -it jira /bin/bash
+	docker exec -it --user=0 jira /bin/bash
 
 licence/licence.txt: licence/patched_licence.txt
 	php processor.php -e $< -r $@
@@ -66,7 +66,7 @@ licence/patched_licence.txt: licence/raw_licence.txt licence/serverid.txt
 		-e '/^ServerID/d' \
 		-e '/^MaintenanceExpiryDate/d' \
 		-e '/^SEN=/a ServerID=$(shell cat licence/serverid.txt)' \
-		-e '/^SEN=/a MaintenanceExpiryDate=2099-01-01' \
+		-e '/^SEN=/a MaintenanceExpiryDate=2029-01-01' \
 		< $< > $@
 
 licence/raw_licence.txt: licence/current.txt
