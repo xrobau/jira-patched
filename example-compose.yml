@@ -1,0 +1,49 @@
+
+services:
+  db:
+    image: postgres:9
+    deploy:
+      replicas: 1
+    environment:
+      - "POSTGRES_USER=root"
+      - "POSTGRES_PASSWORD=yeahnah"
+      - "PGDATA=/var/lib/postgresql/data"
+    volumes:
+      - type: volume
+        source: pgvol
+        target: /var/lib/postgresql/data
+        volume:
+          nocopy: true
+    ports:
+      - "5432:5432"
+
+  jira:
+    deploy:
+      replicas: 1
+    image: xrobau/jira-patched:8.22.2
+    environment:
+      - "CATALINA_OPTS=-Djira.downgrade.allowed=false"
+      - "JAVA_OPTS=-Xms512m -Xmx2048m"
+      - "JIRA_PROXY_NAME=jira.xrob.au"
+      - "JIRA_PROXY_PORT=443"
+      - "JIRA_PROXY_SCHEME=https"
+    volumes:
+      - type: volume
+        source: jiravol
+        target: /var/atlassian/jira
+        volume:
+          nocopy: true
+    ports:
+      - "8080:8080"
+
+volumes:
+  pgvol:
+    driver_opts:
+      type: "nfs"
+      o: "addr=10.11.12.13,nolock,hard,nointr,rw"
+      device: ":/atlassian/postgres"
+  jiravol:
+    driver_opts:
+      type: "nfs"
+      o: "addr=10.11.12.13,nolock,hard,nointr,rw"
+      device: ":/atlassian/jira"

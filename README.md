@@ -27,6 +27,17 @@ To ensure compliance with the copyright laws of Australia, no alterations
 are made to your licence file. All of your purchased resources are
 unchanged.
 
+## Compose File
+
+There's an `example-compose.yml` file that shows what I use in our
+setup. There (allways!) should be a frontend proxy doing SSL offloading
+and filtering - I use haproxy.
+
+HTTPS requests come into haproxy, it matches on the hostname and then
+sends http requests to port 8080 on the docker host. The JIRA\_PROXY\_
+variables are there so that the responses back to the client have
+the correct Hostname and port, and it knows that everything is SSL
+
 ### Debugging
 
 There is some code that has been commented out and left over in the
