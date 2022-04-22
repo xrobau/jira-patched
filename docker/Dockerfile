@@ -29,7 +29,8 @@ COPY imagescripts ${JIRA_SCRIPTS}
 RUN wget -O /tmp/jira.bin ${JIRA_URL} && \
     chmod +x /tmp/jira.bin && \
     /tmp/jira.bin -q -varfile ${JIRA_SCRIPTS}/response.varfile && \
-    rm -f /tmp/jira.bin
+    rm -f /tmp/jira.bin && \
+    chown -R 1000.1000 /opt/jira
 
 # Install MySQL database driver
 RUN rm -f ${JIRA_INSTALL}/lib/mysql-connector-java*.jar && \
@@ -38,15 +39,18 @@ RUN rm -f ${JIRA_INSTALL}/lib/mysql-connector-java*.jar && \
     tar xzf /tmp/mysql-connector-java-${MYSQL_DRIVER_VERSION}.tar.gz                                              \
       --directory=/tmp                                                                                        &&  \
     cp /tmp/mysql-connector-java-${MYSQL_DRIVER_VERSION}/mysql-connector-java-${MYSQL_DRIVER_VERSION}-bin.jar     \
-      ${JIRA_INSTALL}/lib/mysql-connector-java-${MYSQL_DRIVER_VERSION}-bin.jar
+      ${JIRA_INSTALL}/lib/mysql-connector-java-${MYSQL_DRIVER_VERSION}-bin.jar && \
+    rm -rf /tmp/mysql-conn*
 
 # User and group is added by jira.bin
 #RUN grep -q jira:x:1000: /etc/group || addgroup --gid ${CONTAINER_GID} ${CONTAINER_GROUP}
 #RUN grep -q jira:x:1000: /etc/passwd || adduser --uid ${CONTAINER_UID} --ingroup ${CONTAINER_GROUP} --home /home/${CONTAINER_USER} --shell /bin/bash ${CONTAINER_USER}
 
-RUN chown -R 1000.1000 /opt/jira
+RUN apt-get update && \
+	apt-get -y install patch bbe vim && \
+	apt-get -y clean && \
+	mkdir -p /usr/local/patch/src /usr/local/patch/out
 
-RUN apt-get update && apt-get -y install patch bbe vim && mkdir -p /usr/local/patch/src /usr/local/patch/out
 COPY fernflower.jar /usr/local/patch/fernflower.jar
 ENV EXTRAS=3.4.6
 
