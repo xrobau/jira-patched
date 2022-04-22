@@ -47,7 +47,7 @@ RUN rm -f ${JIRA_INSTALL}/lib/mysql-connector-java*.jar && \
 #RUN grep -q jira:x:1000: /etc/passwd || adduser --uid ${CONTAINER_UID} --ingroup ${CONTAINER_GROUP} --home /home/${CONTAINER_USER} --shell /bin/bash ${CONTAINER_USER}
 
 RUN apt-get update && \
-	apt-get -y install patch bbe vim && \
+	apt-get -y install patch bbe vim xmlstarlet && \
 	apt-get -y clean && \
 	mkdir -p /usr/local/patch/src /usr/local/patch/out
 
@@ -113,5 +113,7 @@ USER jira
 WORKDIR ${JIRA_HOME}
 VOLUME ["/var/atlassian/jira"]
 EXPOSE 8080
-CMD ["/opt/jira/bin/start-jira.sh", "-fg"]
+COPY launch.sh common.sh /usr/local/share/atlassian/
+COPY docker-entrypoint.sh /usr/local/bin
+CMD ["/usr/local/bin/docker-entrypoint.sh", "jira"]
 
