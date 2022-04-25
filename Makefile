@@ -21,7 +21,7 @@ licence: licence/licence.txt
 	@echo -e "\n"
 
 .PHONY: setup
-setup: /usr/local/jira docker/fernflower.jar
+setup: /usr/local/jira
 
 /usr/local/jira:
 	mkdir $@
@@ -29,7 +29,7 @@ setup: /usr/local/jira docker/fernflower.jar
 
 .PHONY: start
 start: .docker_build
-	@[ "$(shell docker ps -q -f name=jira)" ] && echo "Jira already running" || docker run -d $(VOLUMES) --publish=8080:8080 --name jira jira:${JIRA_VERSION}
+	@[ "$(shell docker ps -q -f name=jira)" ] && echo "Jira already running" || docker run -d $(VOLUMES) --publish=9080:8080 --name jira jira:${JIRA_VERSION}
 
 .PHONY: stop
 stop:
@@ -46,30 +46,13 @@ build: .docker_build
 shell: start
 	docker exec -it --user=0 jira /bin/bash
 
-docker/fernflower.jar: /tmp/fernflower.jar
-	cp $< $@
-
-jar: fernflower.jar
-fernflower.jar: /tmp/fernflower.jar
-
-/tmp/fernflower.jar: .fernflower_docker_build
-	docker run --rm -v /tmp:/tmp -it fernflower:latest cp /usr/local/fernflower/build/libs/fernflower.jar /tmp
-
-.fernflower_docker_build: $(wildcard fernflower/*)
-	docker build --tag fernflower fernflower/
-	touch $@
-
-.PHONY: ffshell
-ffshell: .fernflower_docker_build
-	docker run --rm -it fernflower:latest /bin/bash
-
 # Not used any more
 docker/master.tar.gz:
 	wget https://github.com/binhnt-teko/jira-crack/archive/refs/heads/master.tar.gz -O $@
 
 
 debug: stop .docker_build
-	docker run -it --rm $(VOLUMES) --name jira-debug jira:${JIRA_VERSION} /bin/bash
+	docker run -it --rm $(VOLUMES) --user=0 --name jira-debug jira:${JIRA_VERSION} /bin/bash
 
 licence/licence.txt: licence/patched_licence.txt
 	php processor.php -e $< -r $@
